@@ -19,7 +19,7 @@ function getVerbArray() {
   const arr = [];
   VERBS.forEach(function (verb) {
     Object.defineProperty(arr, verb, {
-      get () {
+      get() {
         return arr.filter(function (h) {
           return !h.method || h.method === verb;
         });
@@ -30,9 +30,8 @@ function getVerbArray() {
 }
 
 class AxiosMockAdapter {
-  constructor (axiosInstance, options = {}) {
+  constructor(axiosInstance, options = {}) {
     this.reset();
-
     if (axiosInstance) {
       this.axiosInstance = axiosInstance;
       // Clone the axios instance to remove interceptors
@@ -42,7 +41,8 @@ class AxiosMockAdapter {
         : undefined;
 
       this.originalAdapter = axiosInstance.defaults.adapter;
-      this.delayResponse = options.delayResponse > 0 ? options.delayResponse : null;
+      this.delayResponse =
+        options.delayResponse > 0 ? options.delayResponse : null;
       this.onNoMatch = options.onNoMatch || null;
       axiosInstance.defaults.adapter = this.adapter();
     } else {
@@ -50,34 +50,47 @@ class AxiosMockAdapter {
     }
   }
 
-  adapter () {
+  adapter() {
     return (config) => handleRequest(this, config);
   }
 
-  restore () {
+  restore() {
     if (!this.axiosInstance) return;
     this.axiosInstance.defaults.adapter = this.originalAdapter;
     this.axiosInstance = undefined;
   }
 
-  reset () {
+  restoreOriginal() {
+    if (!this.axiosInstance) return;
+    this.axiosInstance = this.axiosInstanceWithoutInterceptors;
+    this.axiosInstance.defaults.adapter = this.originalAdapter;
+    return this.axiosInstance;
+  }
+
+  reset() {
     this.resetHandlers();
     this.resetHistory();
   }
 
-  resetHandlers () {
+  resetHandlers() {
     if (this.handlers) this.handlers.length = 0;
     else this.handlers = getVerbArray();
   }
 
-  resetHistory () {
+  resetHistory() {
     if (this.history) this.history.length = 0;
     else this.history = getVerbArray();
   }
 }
 
-const methodsWithConfigsAsSecondArg = ["any", "get", "delete", "head", "options"];
-function convertDataAndConfigToConfig (method, data, config) {
+const methodsWithConfigsAsSecondArg = [
+  "any",
+  "get",
+  "delete",
+  "head",
+  "options",
+];
+function convertDataAndConfigToConfig(method, data, config) {
   if (methodsWithConfigsAsSecondArg.includes(method)) {
     return validateconfig(method, data || {});
   } else {
@@ -86,16 +99,15 @@ function convertDataAndConfigToConfig (method, data, config) {
 }
 
 const allowedConfigProperties = ["headers", "params", "data"];
-function validateconfig (method, config) {
+function validateconfig(method, config) {
   for (const key in config) {
     if (!allowedConfigProperties.includes(key)) {
       throw new Error(
-        `Invalid config property ${
-        JSON.stringify(key)
-        } provided to ${
-        toMethodName(method)
-        }. Config: ${
-        JSON.stringify(config)}`
+        `Invalid config property ${JSON.stringify(
+          key
+        )} provided to ${toMethodName(method)}. Config: ${JSON.stringify(
+          config
+        )}`
       );
     }
   }
@@ -103,19 +115,23 @@ function validateconfig (method, config) {
   return config;
 }
 
-function toMethodName (method) {
+function toMethodName(method) {
   return `on${method.charAt(0).toUpperCase()}${method.slice(1)}`;
 }
 
 VERBS.concat("any").forEach(function (method) {
-  AxiosMockAdapter.prototype[toMethodName(method)] = function (matcher, data, config) {
+  AxiosMockAdapter.prototype[toMethodName(method)] = function (
+    matcher,
+    data,
+    config
+  ) {
     const self = this;
     let delay;
     matcher = matcher === undefined ? /.*/ : matcher;
 
     const paramsAndBody = convertDataAndConfigToConfig(method, data, config);
 
-    function reply (code, response, headers) {
+    function reply(code, response, headers) {
       const handler = {
         url: matcher,
         method: method === "any" ? undefined : method,
@@ -124,24 +140,20 @@ VERBS.concat("any").forEach(function (method) {
         headers: paramsAndBody.headers,
         replyOnce: false,
         delay,
-        response: typeof code === "function" ? code : [
-          code,
-          response,
-          headers
-        ]
+        response: typeof code === "function" ? code : [code, response, headers],
       };
       addHandler(method, self.handlers, handler);
       return self;
     }
 
-    function withDelayInMs (_delay) {
+    function withDelayInMs(_delay) {
       delay = _delay;
       const respond = requestApi.reply.bind(requestApi);
       Object.assign(respond, requestApi);
       return respond;
     }
 
-    function replyOnce (code, response, headers) {
+    function replyOnce(code, response, headers) {
       const handler = {
         url: matcher,
         method: method === "any" ? undefined : method,
@@ -150,11 +162,7 @@ VERBS.concat("any").forEach(function (method) {
         headers: paramsAndBody.headers,
         replyOnce: true,
         delay: delay,
-        response: typeof code === "function" ? code : [
-          code,
-          response,
-          headers
-        ]
+        response: typeof code === "function" ? code : [code, response, headers],
       };
       addHandler(method, self.handlers, handler);
       return self;
@@ -164,19 +172,19 @@ VERBS.concat("any").forEach(function (method) {
       reply,
       replyOnce,
       withDelayInMs,
-      passThrough () {
+      passThrough() {
         const handler = {
           passThrough: true,
           method: method === "any" ? undefined : method,
           url: matcher,
           params: paramsAndBody.params,
           data: paramsAndBody.data,
-          headers: paramsAndBody.headers
+          headers: paramsAndBody.headers,
         };
         addHandler(method, self.handlers, handler);
         return self;
       },
-      abortRequest () {
+      abortRequest() {
         return reply(async function (config) {
           throw utils.createAxiosError(
             "Request aborted",
@@ -186,7 +194,7 @@ VERBS.concat("any").forEach(function (method) {
           );
         });
       },
-      abortRequestOnce () {
+      abortRequestOnce() {
         return replyOnce(async function (config) {
           throw utils.createAxiosError(
             "Request aborted",
@@ -197,23 +205,23 @@ VERBS.concat("any").forEach(function (method) {
         });
       },
 
-      networkError () {
+      networkError() {
         return reply(async function (config) {
           throw utils.createAxiosError("Network Error", config);
         });
       },
 
-      networkErrorOnce () {
+      networkErrorOnce() {
         return replyOnce(async function (config) {
           throw utils.createAxiosError("Network Error", config);
         });
       },
 
-      timeout () {
+      timeout() {
         return reply(async function (config) {
           throw utils.createAxiosError(
             config.timeoutErrorMessage ||
-              `timeout of ${config.timeout  }ms exceeded`,
+              `timeout of ${config.timeout}ms exceeded`,
             config,
             undefined,
             config.transitional && config.transitional.clarifyTimeoutError
@@ -223,11 +231,11 @@ VERBS.concat("any").forEach(function (method) {
         });
       },
 
-      timeoutOnce () {
+      timeoutOnce() {
         return replyOnce(async function (config) {
           throw utils.createAxiosError(
             config.timeoutErrorMessage ||
-              `timeout of ${config.timeout  }ms exceeded`,
+              `timeout of ${config.timeout}ms exceeded`,
             config,
             undefined,
             config.transitional && config.transitional.clarifyTimeoutError
@@ -242,7 +250,7 @@ VERBS.concat("any").forEach(function (method) {
   };
 });
 
-function findInHandlers (handlers, handler) {
+function findInHandlers(handlers, handler) {
   let index = -1;
   for (let i = 0; i < handlers.length; i += 1) {
     const item = handlers[i];
@@ -265,7 +273,7 @@ function findInHandlers (handlers, handler) {
   return index;
 }
 
-function addHandler (method, handlers, handler) {
+function addHandler(method, handlers, handler) {
   if (method === "any") {
     handlers.push(handler);
   } else {
