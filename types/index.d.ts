@@ -1,20 +1,16 @@
-import { AxiosAdapter, AxiosInstance, AxiosRequestConfig } from 'axios';
+import { AxiosAdapter, AxiosInstance, AxiosRequestConfig } from "axios";
 
 interface AxiosHeaders {
   [key: string]: string | number | boolean | null | undefined;
 }
 
-type MockArrayResponse = [
-  status: number,
-  data?: any,
-  headers?: AxiosHeaders
-];
+type MockArrayResponse = [status: number, data?: any, headers?: AxiosHeaders];
 
 type MockObjectResponse = {
   status: number;
   data: any;
-  headers?: AxiosHeaders,
-  config?: AxiosRequestConfig
+  headers?: AxiosHeaders;
+  config?: AxiosRequestConfig;
 };
 
 type MockResponse = MockArrayResponse | MockObjectResponse;
@@ -46,7 +42,7 @@ declare namespace MockAdapter {
 
 interface MockAdapterOptions {
   delayResponse?: number;
-  onNoMatch?: 'passthrough' | 'throwException';
+  onNoMatch?: "passthrough" | "throwException";
 }
 
 interface AsymmetricMatcher {
@@ -84,18 +80,18 @@ type NoBodyRequestMatcherFunc = (
 ) => MockAdapter.RequestHandler;
 
 type verb =
-  | 'get'
-  | 'post'
-  | 'put'
-  | 'delete'
-  | 'patch'
-  | 'options'
-  | 'head'
-  | 'list'
-  | 'link'
-  | 'unlink';
+  | "get"
+  | "post"
+  | "put"
+  | "delete"
+  | "patch"
+  | "options"
+  | "head"
+  | "list"
+  | "link"
+  | "unlink";
 
-type HistoryArray = AxiosRequestConfig[] & Record<verb, AxiosRequestConfig[]>
+type HistoryArray = AxiosRequestConfig[] & Record<verb, AxiosRequestConfig[]>;
 
 declare class MockAdapter {
   static default: typeof MockAdapter;
@@ -107,7 +103,7 @@ declare class MockAdapter {
   resetHandlers(): void;
   resetHistory(): void;
   restore(): void;
-
+  restoreOriginal(): AxiosInstance;
   history: HistoryArray;
 
   onAny: NoBodyRequestMatcherFunc;
